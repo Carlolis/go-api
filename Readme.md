@@ -13,11 +13,16 @@ et une description:
 
 - Récupération => Méthode "GET" sur /document pour récupérer tout les documents. Et Méthode "GET" sur /document:{id} pour récupérer un document selon son id.
 
-- Suppression
+- Suppression => Méthode "DELETE" sur /document/{id}.
   Les documents seront stockés enmémoire pour cet exercice.
 
-Des tests unitaires sont attendus.
+Des tests unitaires sont attendus: c'est fait
 
-Une image Docker empaquetantvotre service estun plus.
-Travaillerdans un repository git local est un plus.
-Merci de nous faire parvenir votrerésultat dans un zip.
+Une image Docker empaquetant votre service est un plus :
+
+Pour lancer le docker :
+
+docker image load < go-test.tar
+docker run -p 8010:8010 go-charles-ilieff
+
+Travailler dans un repository git local est un plus: c'est fait.
