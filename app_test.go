@@ -86,6 +86,30 @@ func TestPostDocument(t *testing.T) {
 }
 
 
+// TODO créer un payload avec l'id comme un entier et non une string
+func TestPostDocumentWithId(t *testing.T) {
+
+// Ne construit pas le bon json, l'ID doit un nombre.
+	data := map[string]string{"ID":"10","name": "document14", "description": "Test 14"}
+
+	jsonValue, _ := json.Marshal(data)
+
+	req, _ :=http.NewRequest("POST", "/document", bytes.NewBuffer(jsonValue))
+	req.Header.Add("Content-Type", "application/json")
+	response := executeRequest(req)
+
+	checkResponseCode(t, http.StatusBadRequest, response.Code)
+
+
+	var m map[string]string
+	json.Unmarshal(response.Body.Bytes(), &m)
+
+	if m["error"] != "A new document must not have an id" {
+			t.Errorf("Expected an 'A new document must not have an id' error. Got %s", response.Body.String())
+	}
+}
+
+
 func executeRequest(req *http.Request) *httptest.ResponseRecorder {
 	rr := httptest.NewRecorder()
 	a.Router.ServeHTTP(rr, req)

@@ -75,9 +75,15 @@ func  addDocument(w http.ResponseWriter, r *http.Request)  {
 	if err := decoder.Decode(&document); err != nil {
 		respondWithError(w, http.StatusBadRequest, "Invalid request payload")
 		return
- }
+	}
 
 	decoder.Decode(&document)
+
+
+	if document.ID != 0 {
+		respondWithError(w, http.StatusBadRequest, "A new document must not have an id")
+		return
+	}
 
 	document.ID = len(documents)+1
 
