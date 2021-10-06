@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -19,6 +20,7 @@ type Document struct {
     Name  string  `json:"name"`
     Description string `json:"description"`
 }
+
 
 // bouchon
 var documents []Document 
@@ -55,7 +57,7 @@ func deleteDocumentById(w http.ResponseWriter, r *http.Request)  {
 	id, err := strconv.Atoi(params["id"])
 
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest, "Invalid Product ID")
+		respondWithError(w, http.StatusBadRequest, "Invalid document ID")
 		return
 }
 
@@ -75,8 +77,11 @@ func  addDocument(w http.ResponseWriter, r *http.Request)  {
 		return
  }
 
-
 	decoder.Decode(&document)
+
+	document.ID = len(documents)+1
+
+
 	documents = append(documents, document)
   json.NewEncoder(w).Encode(&document)
 }
@@ -86,20 +91,26 @@ func getDocuments(w http.ResponseWriter, r *http.Request) {
 }
 
 
-func (a *App) Run() {
+func (a *App) Initalize() {
 	documents = append(documents,Document{ID:1,Name:"document1",Description:"Test 1"},Document{ID:2,Name:"document2",Description:"Test 2"})
-	r := mux.NewRouter()
-
-	r.HandleFunc("/document/{id:[0-9]+}",getDocumentById).Methods("GET")
-	r.HandleFunc("/document",getDocuments).Methods("GET")
-	r.HandleFunc("/document",addDocument).Methods("POST")
-	r.HandleFunc("/document/{id:[0-9]+}",deleteDocumentById).Methods("DELETE")
-	
-
-	http.ListenAndServe(":8010",r)
+	a.Router = mux.NewRouter()
+	a.initializeRoutes()
 }
+
+func (a *App) initializeRoutes() {
+	a.Router.HandleFunc("/document/{id}",getDocumentById).Methods("GET")
+	a.Router.HandleFunc("/document",getDocuments).Methods("GET")
+	a.Router.HandleFunc("/document",addDocument).Methods("POST")
+	a.Router.HandleFunc("/document/{id}",deleteDocumentById).Methods("DELETE")
+}
+
+func (a *App) Run() {
+	log.Fatal(http.ListenAndServe(":8010", a.Router))
+}
+
 
 func main() {
 	a := App{}
+	a.Initalize()
 	a.Run()
 }
