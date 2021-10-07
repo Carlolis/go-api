@@ -14,13 +14,11 @@ type App struct {
 }
 
 type Document struct {
-	ID          int    `json:"id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
 }
 
-// bouchon
-var documents []Document
+var documents = map[int]Document {}
 
 func respondWithError(w http.ResponseWriter, code int, message string) {
 	response, _ := json.Marshal(map[string]string{"error": message})
@@ -32,18 +30,15 @@ func respondWithError(w http.ResponseWriter, code int, message string) {
 
 func getDocumentById(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	i, err := strconv.Atoi(params["id"])
+	id, err := strconv.Atoi(params["id"])
 
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, "Invalid document ID")
 		return
 	}
 
-	for _, document := range documents {
-		if document.ID == i {
-			json.NewEncoder(w).Encode(&document)
-		}
-	}
+	json.NewEncoder(w).Encode(documents[id])
+
 }
 
 func deleteDocumentById(w http.ResponseWriter, r *http.Request) {
@@ -55,11 +50,7 @@ func deleteDocumentById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	for i, document := range documents {
-		if document.ID == id {
-			documents = append(documents[:i], documents[i+1:]...)
-		}
-	}
+	delete(documents, id)
 }
 
 func addDocument(w http.ResponseWriter, r *http.Request) {
@@ -72,14 +63,9 @@ func addDocument(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if document.ID != 0 {
-		respondWithError(w, http.StatusBadRequest, "A new document must not have an id")
-		return
-	}
+	id := len(documents) + 1
 
-	document.ID = len(documents) + 1
-
-	documents = append(documents, document)
+	documents[id] = document
 	json.NewEncoder(w).Encode(&document)
 }
 
@@ -88,7 +74,8 @@ func getDocuments(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) Initalize() {
-	documents = append(documents, Document{ID: 1, Name: "document1", Description: "Test 1"}, Document{ID: 2, Name: "document2", Description: "Test 2"})
+	documents[0] = Document{Name: "document1", Description: "Test 1"}
+	documents[1] = Document{Name: "document2", Description: "Test 2"}
 	a.Router = mux.NewRouter()
 	a.initializeRoutes()
 }
