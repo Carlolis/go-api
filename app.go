@@ -70,14 +70,15 @@ func deleteDocumentById(w http.ResponseWriter, r *http.Request)  {
 
 func  addDocument(w http.ResponseWriter, r *http.Request)  {
 	var document Document
+
 	decoder := json.NewDecoder(r.Body)
 
-	if err := decoder.Decode(&document); err != nil {
+	
+
+	if  decoder.Decode(&document) != nil {
 		respondWithError(w, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
-
-	decoder.Decode(&document)
 
 
 	if document.ID != 0 {
