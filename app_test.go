@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
 )
 
@@ -32,6 +33,23 @@ func TestGetNotValidId(t *testing.T) {
 	}
 }
 
+func TestGetNonExistentDocument(t *testing.T) {
+
+	req, _ := http.NewRequest("GET", "/document/11111", nil)
+	response := executeRequest(req)
+
+	checkResponseCode(t, http.StatusNotFound, response.Code)
+}
+
+func TestValidGet(t *testing.T) {
+
+	req, _ := http.NewRequest("GET", "/document/0", nil)
+	response := executeRequest(req)
+
+	checkResponseCode(t, http.StatusOK, response.Code)
+
+}
+
 func TestDeleteNotValidId(t *testing.T) {
 
 	req, _ := http.NewRequest("DELETE", "/document/a", nil)
@@ -47,18 +65,6 @@ func TestDeleteNotValidId(t *testing.T) {
 	}
 }
 
-func TestGetNonExistentDocument(t *testing.T) {
-
-	req, _ := http.NewRequest("GET", "/document/110", nil)
-	response := executeRequest(req)
-
-	checkResponseCode(t, http.StatusOK, response.Code)
-
-	if body := response.Body.String(); body != "" {
-		t.Errorf("Expected empty response. Got '%s'", body)
-	}
-}
-
 func TestGetAll(t *testing.T) {
 
 	req, _ := http.NewRequest("GET", "/document", nil)
@@ -70,7 +76,7 @@ func TestGetAll(t *testing.T) {
 
 func TestPostDocument(t *testing.T) {
 
-	data := map[string]string{"name": "document14", "description": "Test 14"}
+	data := Document{Name: "document42", Description: "Test 42"}
 
 	jsonValue, _ := json.Marshal(data)
 
@@ -82,11 +88,21 @@ func TestPostDocument(t *testing.T) {
 
 }
 
-// TODO créer un payload avec l'id comme un entier et non une string
-func TestPostDocumentWithId(t *testing.T) {
+func TestPostInvalidPayload(t *testing.T) {
 
-	// Ne construit pas le bon json, l'ID doit un nombre.
-	data := map[string]string{"ID": "10", "name": "document14", "description": "Test 14"}
+	data := "\"Name\": \"Document42\", \"commentaire\": \"Test 42\""
+
+	req, _ := http.NewRequest("POST", "/document", strings.NewReader(data))
+	req.Body.Close()
+	req.Header.Add("Content-Type", "text/plain")
+	response := executeRequest(req)
+
+	checkResponseCode(t, http.StatusBadRequest, response.Code)
+}
+
+func TestPostDocumentWithoutName(t *testing.T) {
+
+	data := Document{Description: "Test 42"}
 
 	jsonValue, _ := json.Marshal(data)
 
@@ -95,13 +111,19 @@ func TestPostDocumentWithId(t *testing.T) {
 	response := executeRequest(req)
 
 	checkResponseCode(t, http.StatusBadRequest, response.Code)
+}
 
-	var m map[string]string
-	json.Unmarshal(response.Body.Bytes(), &m)
+func TestPostDocumentWithId(t *testing.T) {
 
-	if m["error"] != "A new document must not have an id" {
-		t.Errorf("Expected an 'A new document must not have an id' error. Got %s", response.Body.String())
-	}
+	data := Document{Id: 1, Name: "document14", Description: "Test 14"}
+
+	jsonValue, _ := json.Marshal(data)
+
+	req, _ := http.NewRequest("POST", "/document", bytes.NewBuffer(jsonValue))
+	req.Header.Add("Content-Type", "application/json")
+	response := executeRequest(req)
+
+	checkResponseCode(t, http.StatusBadRequest, response.Code)
 }
 
 func executeRequest(req *http.Request) *httptest.ResponseRecorder {
