@@ -58,6 +58,13 @@ func deleteDocumentById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	_, isPresent := documents[id]
+
+	if !isPresent {
+		respondWithError(w, http.StatusNotFound, "No document with id : "+fmt.Sprint(id))
+		return
+	}
+
 	delete(documents, id)
 }
 
@@ -79,7 +86,7 @@ func addDocument(w http.ResponseWriter, r *http.Request) {
 	document.Id = docId
 	documents[docId] = document
 	docId++
-	
+
 	json.NewEncoder(w).Encode(&document)
 }
 
