@@ -20,7 +20,8 @@ type Document struct {
 	Description string `json:"description"`
 }
 
-var documents = map[int]Document{}
+var documents = map[int]Document{0: {Id: 0, Name: "document1", Description: "Test 1"}, 1: {Id: 1, Name: "document2", Description: "Test 2"}}
+var docId = 2
 
 func respondWithError(w http.ResponseWriter, code int, message string) {
 	response, _ := json.Marshal(map[string]string{"error": message})
@@ -74,10 +75,11 @@ func addDocument(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusBadRequest, "A new document must not have an id")
 		return
 	}
+
+	document.Id = docId
+	documents[docId] = document
+	docId++
 	
-	id := len(documents) + 1
-	
-	documents[id] = document
 	json.NewEncoder(w).Encode(&document)
 }
 
@@ -86,8 +88,7 @@ func getDocuments(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) Initalize() {
-	documents[0] = Document{Id: 0, Name: "document1", Description: "Test 1"}
-	documents[1] = Document{Id: 1, Name: "document2", Description: "Test 2"}
+
 	a.Router = mux.NewRouter()
 	a.initializeRoutes()
 }
