@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"sync"
 
 	"github.com/gorilla/mux"
 )
@@ -24,7 +23,12 @@ type Document struct {
 var documents = map[int]Document{0: {Id: 0, Name: "document1", Description: "Test 1"}, 1: {Id: 1, Name: "document2", Description: "Test 2"}}
 var docId = 2
 
-var mutex = &sync.Mutex{}
+type documentOp struct {
+	Id      int
+	confirm chan int
+}
+
+var addDoc chan *documentOp
 
 func respondWithError(w http.ResponseWriter, code int, message string) {
 	response, _ := json.Marshal(map[string]string{"error": message})
@@ -91,12 +95,12 @@ func addDocument(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	mutex.Lock()
-	document.Id = docId
-	documents[docId] = document
-	docId++
-	mutex.Unlock()
+	add := &documentOp{Id: document.Id,
+		confirm: make(chan int)}
 
+	addDoc <- add
+	document.Id = <-add.confirm
+	documents[document.Id] = document
 	json.NewEncoder(w).Encode(&document)
 }
 
@@ -108,6 +112,16 @@ func (a *App) Initalize() {
 
 	a.Router = mux.NewRouter()
 	a.initializeRoutes()
+	addDoc = make(chan *documentOp, 8)
+	go func() {
+		for {
+			select {
+			case request := <-addDoc:
+				request.confirm <- docId
+				docId++
+			}
+		}
+	}()
 }
 
 func (a *App) initializeRoutes() {
@@ -115,14 +129,18 @@ func (a *App) initializeRoutes() {
 	a.Router.HandleFunc("/document", getDocuments).Methods("GET")
 	a.Router.HandleFunc("/document", addDocument).Methods("POST")
 	a.Router.HandleFunc("/document/{id}", deleteDocumentById).Methods("DELETE")
+
 }
 
 func (a *App) Run() {
+
 	log.Fatal(http.ListenAndServe(":8010", a.Router))
+
 }
 
 func main() {
 	a := App{}
+
 	a.Initalize()
 	a.Run()
 }
