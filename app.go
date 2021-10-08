@@ -86,6 +86,11 @@ func addDocument(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if document.Name == "" {
+		respondWithError(w, http.StatusBadRequest, "A new document must have an name")
+		return
+	}
+
 	mutex.Lock()
 	document.Id = docId
 	documents[docId] = document
