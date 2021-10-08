@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"sync"
 
 	"github.com/gorilla/mux"
 )
@@ -22,6 +23,8 @@ type Document struct {
 
 var documents = map[int]Document{0: {Id: 0, Name: "document1", Description: "Test 1"}, 1: {Id: 1, Name: "document2", Description: "Test 2"}}
 var docId = 2
+
+var mutex = &sync.Mutex{}
 
 func respondWithError(w http.ResponseWriter, code int, message string) {
 	response, _ := json.Marshal(map[string]string{"error": message})
@@ -83,9 +86,11 @@ func addDocument(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	mutex.Lock()
 	document.Id = docId
 	documents[docId] = document
 	docId++
+	mutex.Unlock()
 
 	json.NewEncoder(w).Encode(&document)
 }
