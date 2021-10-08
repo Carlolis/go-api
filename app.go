@@ -70,8 +70,13 @@ func addDocument(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if document.Id != 0 {
+		respondWithError(w, http.StatusBadRequest, "A new document must not have an id")
+		return
+	}
+	
 	id := len(documents) + 1
-
+	
 	documents[id] = document
 	json.NewEncoder(w).Encode(&document)
 }
