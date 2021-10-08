@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -14,11 +15,12 @@ type App struct {
 }
 
 type Document struct {
+	Id          int    `json:"Id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
 }
 
-var documents = map[int]Document {}
+var documents = map[int]Document{}
 
 func respondWithError(w http.ResponseWriter, code int, message string) {
 	response, _ := json.Marshal(map[string]string{"error": message})
@@ -37,8 +39,13 @@ func getDocumentById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	json.NewEncoder(w).Encode(documents[id])
+	document, isPresent := documents[id]
 
+	if !isPresent {
+		respondWithError(w, http.StatusNotFound, "No document with id : "+fmt.Sprint(id))
+		return
+	}
+	json.NewEncoder(w).Encode(document)
 }
 
 func deleteDocumentById(w http.ResponseWriter, r *http.Request) {
@@ -74,8 +81,8 @@ func getDocuments(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) Initalize() {
-	documents[0] = Document{Name: "document1", Description: "Test 1"}
-	documents[1] = Document{Name: "document2", Description: "Test 2"}
+	documents[0] = Document{Id: 0, Name: "document1", Description: "Test 1"}
+	documents[1] = Document{Id: 1, Name: "document2", Description: "Test 2"}
 	a.Router = mux.NewRouter()
 	a.initializeRoutes()
 }
